@@ -1,0 +1,6 @@
+Julia Processes: 1, Julia Threads: 3 | Wall-Clock Time: 2278.3715 seconds
+Julia Processes: 2, Julia Threads: 3 | Wall-Clock Time: 1204.2325 seconds
+Julia Processes: 4, Julia Threads: 3 | Wall-Clock Time: 665.8960 seconds
+Julia Processes: 8, Julia Threads: 3 | Wall-Clock Time: 356.4098 seconds
+Julia Processes: 16, Julia Threads: 3 | Wall-Clock Time: 203.4856 seconds
+Julia Processes: 32, Julia Threads: 3 | Wall-Clock Time: 118.0786 seconds

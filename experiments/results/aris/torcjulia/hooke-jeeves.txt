@@ -1,0 +1,10 @@
+MPI Processes: 1, Worker Threads: 2 | Wall-Clock Time: 749.3771 seconds
+MPI Processes: 2, Worker Threads: 2 | Wall-Clock Time: 376.3913 seconds
+MPI Processes: 4, Worker Threads: 2 | Wall-Clock Time: 189.0425 seconds
+MPI Processes: 8, Worker Threads: 2 | Wall-Clock Time: 95.5534 seconds
+MPI Processes: 12, Worker Threads: 2 | Wall-Clock Time: 64.9225 seconds
+MPI Processes: 16, Worker Threads: 2 | Wall-Clock Time: 50.5949 seconds
+MPI Processes: 24, Worker Threads: 2 | Wall-Clock Time: 34.5894 seconds
+MPI Processes: 32, Worker Threads: 2 | Wall-Clock Time: 26.7125 seconds
+MPI Processes: 48, Worker Threads: 2 | Wall-Clock Time: 18.5125 seconds
+MPI Processes: 64, Worker Threads: 2 | Wall-Clock Time: 14.5411 seconds
