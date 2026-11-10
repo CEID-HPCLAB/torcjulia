@@ -1,5 +1,6 @@
 # 🚀 torcjulia: An MPI-based Runtime System for Asynchronous Task Parallelism in Julia
 
+[![Release](https://img.shields.io/github/v/release/CEID-HPCLAB/torcjulia?color=orange)](https://github.com/CEID-HPCLAB/torcjulia/releases/tag/v0.1.0)
 [![License](https://img.shields.io/badge/License-MIT-FFDEAD)](https://opensource.org/licenses/MIT)<br>
 [![Julia](https://img.shields.io/badge/Julia-1.12-purple?logo=julia&logoColor=white)](https://julialang.org)
 ![HPC](https://img.shields.io/badge/High--Performance%20Computing-HPC-green)
@@ -88,7 +89,7 @@ The aforementioned capabilities are exposed through an **intuitive** API inspire
 
 ### Asynchronous Many-Task (AMT) Parallelism
 
-In the *post-Moore era*, the ever-increasing demand for computational power has made cluster environments the prevalent platform for high-performance computing (HPC). 
+In the *post-Moore* era, the ever-increasing demand for computational power has made cluster environments the prevalent platform for high-performance computing (HPC). 
 
 However, the growing heterogeneity of modern parallel computing systems, in both hardware and software, poses significant **programmability** and **portability challenges**, often hindering efficient resource utilization. In this evolving landscape, **AMT programming models** have emerged as a productive alternative to address these challenges, providing a **high-level** paradigm for expressing parallelism across the hierarchical architecture of contemporary HPC systems. 
 
