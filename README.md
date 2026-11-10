@@ -3102,7 +3102,7 @@ Moreover, `torcjulia` demonstrates better scalability than `Dagger`. For the fir
   <picture>
     <source srcset = "docs/Fig4_dark.png" media = "(prefers-color-scheme: dark)">
     <source srcset = "docs/Fig4_light.png" media = "(prefers-color-scheme: light)">
-    <img src = "docs/Fig4_dark.png" width = "60%" alt = "Performance comparison with Dagger across the four evaluated workloads">
+    <img src = "docs/Fig4_dark.png" width = "70%" alt = "Performance comparison with Dagger across the four evaluated workloads">
   </picture>
   <br>
   <em>Figure 4: Performance comparison with Dagger</a></em>
