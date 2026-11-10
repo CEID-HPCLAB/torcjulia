@@ -1068,6 +1068,9 @@ julia> Pkg.develop(path="./torcjulia")
 julia> Pkg.instantiate()
 ```
 
+> [!NOTE]
+> The `examples/` environment already declares the local `torcjulia` package via the `[sources]` section of its `Project.toml`. On Julia `version 1.11` or later, running `Pkg.activate("./examples")` followed by `Pkg.instantiate()` from the repository root is therefore sufficient. On earlier versions, `[sources]` is ignored, so also run `Pkg.develop(path="./torcjulia")` after activating the environment.
+
 > [!WARNING]
 > The `torcjulia` launch commands in the following examples assume Julia `version 1.12` or later. For earlier versions, adjust the command-line option for specifying the number of threads per MPI process (`-t` / `--threads`) accordingly.
 
@@ -3148,8 +3151,12 @@ Next, launch the `Julia REPL` from the repository root, activate the Julia envir
 ```julia
 julia> using Pkg
 julia> Pkg.activate("./experiments")
+julia> Pkg.develop(path="./torcjulia")
 julia> Pkg.instantiate()
 ```
+
+> [!NOTE]
+> The `experiments/` environment already declares the local `torcjulia` package via the `[sources]` section of its `Project.toml`. On Julia 1.11 or later, running `Pkg.activate("./experiments")` followed by `Pkg.instantiate()` from the repository root is therefore sufficient. On earlier versions, `[sources]` is ignored, so also run `Pkg.develop(path="./torcjulia")` after activating the environment.
 
 Once ready, navigate to the `torcjulia` [experiments scripts directory](./scripts/experiments/torcjulia/) and execute the following commands:
 ```bash
