@@ -7,8 +7,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
-bash ${SCRIPT_DIR}/run_workload2.sh
-bash ${SCRIPT_DIR}/run_workload3.sh
+bash ${SCRIPT_DIR}/run_workload1.sh
+bash ${SCRIPT_DIR}/run_workload4.sh
 
 echo
 echo "The experiments for the two workloads with irregular task granularity completed successfully."
