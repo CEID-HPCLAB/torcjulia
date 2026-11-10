@@ -10,8 +10,6 @@
 
 By combining intra-node **work sharing** with inter-node **work stealing**, torcjulia provides **adaptive load balancing**, achieving efficient resource utilization across both regular and irregular workloads. Moreover, tasks can be nested arbitrarily, enabling applications to exploit **multiple levels** of parallelism, while the runtime engine can dynamically switch to the native Single Program Multiple Data (SPMD) programming model for direct integration of MPI code. Beyond task-based programming, torcjulia also supports **skeletal programming**, offering high-level abstractions that simplify the implementation of parallel applications at scale.
 
-The aforementioned capabilities are exposed through an **intuitive** API inspired by the [Python Enhancement Proposal (PEP) 3148](https://peps.python.org/pep-3148/), enabling researchers to seamlessly scale their workflows from local workstations to multi-node clusters through simple `submit` and `wait` calls.
-
 
 ## Table of Contents
 - [Overview](#overview)
@@ -3114,7 +3112,7 @@ Moreover, `torcjulia` demonstrates better scalability than `Dagger`. For the fir
 
 ### Regenerating the Figures
 
-All precomputed results from the conducted experiments are available [here](./docs/results/). To regenerate the figures directly from these outputs, run:
+All precomputed results from the conducted experiments are available [here](./experiments/results/aris). To regenerate the figures directly from these outputs, run:
 
 ```bash
 cd scripts/plots/
@@ -3156,7 +3154,7 @@ julia> Pkg.instantiate()
 ```
 
 > [!NOTE]
-> The `experiments/` environment already declares the local `torcjulia` package via the `[sources]` section of its `Project.toml`. On Julia 1.11 or later, running `Pkg.activate("./experiments")` followed by `Pkg.instantiate()` from the repository root is therefore sufficient. On earlier versions, `[sources]` is ignored, so also run `Pkg.develop(path="./torcjulia")` after activating the environment.
+> The `experiments/` environment already declares the local `torcjulia` package via the `[sources]` section of its `Project.toml`. On Julia `version 1.11` or later, running `Pkg.activate("./experiments")` followed by `Pkg.instantiate()` from the repository root is therefore sufficient. On earlier versions, `[sources]` is ignored, so also run `Pkg.develop(path="./torcjulia")` after activating the environment.
 
 Once ready, navigate to the `torcjulia` [experiments scripts directory](./scripts/experiments/torcjulia/) and execute the following commands:
 ```bash
@@ -3171,7 +3169,7 @@ bash run_workload4.sh # Mandelbrot Set Computation
 > [!NOTE]
 > After executing the above scripts, the median execution time across five benchmark runs for each worker configuration will be stored in the `experiments/results/torcjulia/` directory in separate `.txt` files, one per workload. 
 > 
-> By running the corresponding Python plotting scripts located under `scripts/plots/` ([`runtime.py`](./scripts/plots/runtime.py), [`speedup.py`](./scripts/plots/speedup.py)), Figure 2 of the paper can be generated.
+> By running the corresponding Python plotting script located under `scripts/plots/` ([`runtime.py`](./scripts/plots/runtime.py)), Figure 2 of the paper can be generated.
 
 > [!CAUTION]
 > Executing each workload script overwrites the existing results in its corresponding `.txt` output file.
@@ -3188,7 +3186,7 @@ bash run_workload4.sh # Mandelbrot Set Computation
 
 ### Dagger
 
-To reproduce the reported results for the `Dagger` runtime system (Figure 4 in the paper), first ensure that `Dagger` is installed in the active Julia environment by starting the `Julia REPL` from the repository root and running the following commands:
+To reproduce the reported results for the `Dagger` runtime system (Figure 3 in the paper), first ensure that `Dagger` is installed in the active Julia environment by starting the `Julia REPL` from the repository root and running the following commands:
 ```bash
 julia> using Pkg
 julia> Pkg.activate("./experiments")
@@ -3262,7 +3260,8 @@ torcjulia/
 │   ├── mpi-shared-memory/     # MPI shared-memory windows integration
 │   ├── scheduling-policies/   # Task scheduling policies
 │   ├── task-dependencies/     # Task dependency management
-│   └── worker-management/     # Dynamic worker pool management
+│   ├── worker-management/     # Dynamic worker pool management
+│   └── Project.toml           # Dependencies for running the provided examples
 │
 ├── experiments/               # Experimental workloads
 │   ├── data-preprocessing/    # Third workload
@@ -3281,11 +3280,9 @@ torcjulia/
 │   ├── run_all.sh             # Script for running all experiments and reproducing the paper results
 │   └── slurm/                 # Slurm job scripts for running experiments on the ARIS supercomputer
 │
-├── torcjulia/                 # Core implementation of torcjulia
-│   ├── src/
-│   └── Project.toml           # Package dependencies
-│
-└── Project.toml               # Dependencies for running the provided examples
+└── torcjulia/                 # Core implementation of torcjulia
+    ├── src/                   # Source code
+    └── Project.toml           # Package dependencies
 ```
 
 ## Planned Features
