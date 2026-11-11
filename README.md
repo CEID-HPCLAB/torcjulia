@@ -618,6 +618,12 @@ Additional routines are provided for engine setup, querying the runtime environm
 
   Deactivates the inter-node work stealing mechanism.
 
+- ```julia
+  is_stealing_enabled()::Bool 
+  ```
+
+  Returns `true` if the inter-node work stealing mechanism is enabled, and `false` otherwise.
+
 > [!WARNING] 
 > Work stealing is disabled by default. Call `torcjulia.enable_stealing` to activate the work-stealing mechanism.
 
