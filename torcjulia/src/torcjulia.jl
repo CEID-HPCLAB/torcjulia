@@ -23,8 +23,7 @@ import .runtime: add_worker, ctx, filter, finalize, get, gettime, init, input,
                  map_async, ready, reduce, remove_worker, result, 
                  scan, set_logger_level, shw_alloc, spmd, starmap,
                  starmap_async, submit, wait,
-                 DistributionPolicy, Future, TaskPriority, TaskPriorityLevel, 
-                 TORCJULIA_NUM_WORKERS, _enable_stealing, _torcjulia_tls_get_id
+                 DistributionPolicy, Future, TaskPriority, TaskPriorityLevel
 
 export add_worker, filter, get, gettime, init, input, kw_input,
        map, mapReduce, mapPairs, mapPairsReduce, map_async, ready, 
@@ -52,6 +51,7 @@ const worker_id = () -> Int(runtime.ctx[].rank) * Int(runtime.TORCJULIA_NUM_WORK
 
 enable_stealing() = (runtime._enable_stealing()) # Enables the work stealing mechanism (Default: disabled)
 disable_stealing() = (runtime._disable_stealing()) # Disables the work stealing mechanism
+is_stealing_enabled()::Bool = (runtime._get_stealing_status()) # Returns the current status of the work stealing mechanism (true if enabled, false otherwise)
 
 """
     set_scheduling_policy(policy::Symbol, weights::Union{Vector{Int}, Nothing} = nothing)

@@ -2671,6 +2671,17 @@ function _disable_stealing()
 end
 
 """
+    _get_stealing_status() [Helper]
+
+Returns the current status of the work stealing mechanism.
+
+If work stealing is enabled, returns `true`; otherwise, returns `false`.
+"""
+function _get_stealing_status()::Bool
+    TORCJULIA_STEALING_ENABLED[]
+end
+
+"""
     gettime()::Float64 [Helper]
 
 Returns the current time in seconds.
