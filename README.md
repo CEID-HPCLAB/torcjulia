@@ -123,7 +123,7 @@ More recently, Dastur *et al.* proposed `DistributedWorkflows` [[5](https://proc
 
 Overall, existing task-based engines in Julia are primarily designed for general-purpose parallel programming, which can pose performance and scalability challenges when applied to tightly coupled HPC workloads characterized by **irregular task granularity**, **nested parallelism**, and **highly dynamic execution behavior**. 
 
-Furthermore, they lack **direct interoperability** with applications based on the MPI, the *lingua franca* for inter-node communication in HPC, limiting their adoption in large-scale applications. Dynamic switching to the native SPMD execution model of MPI is also not supported. Futhermore, most require users to specify the available workers *a priori*, without supporting their **dynamic adjustment** at runtime. 
+Moreover, they lack **direct interoperability** with applications based on MPI, the *lingua franca* for inter-node communication in HPC, limiting their adoption in large-scale applications. Dynamic switching to the native SPMD execution model of MPI is also not supported. Furthermore, most require users to specify the available workers *a priori*, without supporting their **dynamic adjustment** at runtime. 
 
 In addition, they provide limited **fine-grained control** over task scheduling and load balancing, which prevents expert users from incorporating application-specific knowledge into runtime decisions. Finally, their APIs lack support for **parallel algorithmic skeletons**, increasing the programming effort required to express common data-parallel computation patterns efficiently.
 
@@ -143,7 +143,7 @@ Overall, `torcjulia` aims to extend Julia's HPC ecosystem by providing a **porta
 
 - Automatically detects and orchestrates **data dependencies** between tasks.
 
-- Takes advantage of MPI internally in a transparent to the user way but also allows the use of **legacy MPI code** at the application level.
+- Takes advantage of MPI internally in a way that is transparent to the user but also allows the use of **legacy MPI code** at the application level.
 
 - Integrates **inter-node work stealing** for load balancing, enhanced by a set of task distribution policies that can be customized by the user.
 
@@ -205,8 +205,17 @@ julia> using Pkg
 julia> Pkg.activate(".") # Assumes the Julia environment is located at the repository root
 julia> Pkg.develop(path="./torcjulia")
 ```
+
 > [!TIP]
 > To verify that `torcjulia` package has been added successfully to the active Julia environment, run `using torcjulia` in the `Julia REPL`.
+
+We recommend launching `torcjulia`-based applications with the `mpiexecjl` wrapper. To use it, also install [MPI.jl](https://github.com/JuliaParallel/MPI.jl) in the active environment by running:
+```julia
+julia> Pkg.add("MPI")
+```
+
+> [!IMPORTANT] 
+> `mpiexecjl` is a project-aware MPI launcher provided by [MPI.jl](https://github.com/JuliaParallel/MPI.jl). Since different Julia projects can be configured to use different MPI implementations, selecting the appropriate `mpiexec` executable can otherwise be cumbersome. The `mpiexecjl` wrapper addresses this by selecting the launcher associated with the specified Julia project through the `--project` option. To use it, run `MPI.install_mpiexecjl` in the `Julia REPL` after loading MPI, and add the installation directory (by default, `~/.julia/bin`) to your `PATH`. For further details, see the [MPI.jl documentation](https://juliaparallel.org/MPI.jl/stable/usage/#Julia-wrapper-for-mpiexec).
 
 ### Quick Start
 
@@ -268,9 +277,6 @@ mpiexecjl -n <num_MPI_processes> julia --project=<path_to_environment> --threads
 
 > [!TIP] 
 > Replace the placeholders with the desired number of MPI processes, the path to the Julia environment, the number of Julia threads per process, and the path to the script. For Julia versions earlier than `1.12`, omit `,0` from the `--threads` argument.
-
-> [!IMPORTANT] 
-> `mpiexecjl` is a project-aware MPI launcher provided by [MPI.jl](https://github.com/JuliaParallel/MPI.jl). Since different Julia projects can be configured to use different MPI implementations, selecting the appropriate `mpiexec` executable can otherwise be cumbersome. The `mpiexecjl` wrapper addresses this by selecting the launcher associated with the specified Julia project through the `--project` option. To use it, run `MPI.install_mpiexecjl` in the `Julia REPL` after loading MPI, and add the installation directory (by default, `~/.julia/bin`) to your `PATH`. For further details, see the [MPI.jl documentation](https://juliaparallel.org/MPI.jl/stable/usage/#Julia-wrapper-for-mpiexec).
 
 > [!WARNING] 
 > When launching `torcjulia` with multiple MPI processes, one thread in each process is dedicated to handling task coordination and does not execute tasks (see [Software Architecture](#software-architecture)). Therefore, each process must be configured with at least **two** threads whenever `MPI.NUM_PROCS > 1`. You can set the number of threads per process using the `-t/--threads` command-line option or the `JULIA_NUM_THREADS` environment variable.
@@ -383,7 +389,7 @@ torcjulia [tasks]: average pending time = 1.587s, average execution time = 1.007
 Two MPI processes are launched, each configured with one worker thread and one manager thread (hence `--threads 2,0`). The primary task runs on the main thread of the master process (`MPI rank 0`) and spawns eight tasks. By default, the tasks are assigned to the worker threads according to a round-robin scheduling policy. Consequently, tasks 1, 3, 5, and 7 are assigned to the worker thread on MPI rank 0, while tasks 2, 4, 6, and 8 are assigned to the worker thread on MPI rank 1.
 
 > [!NOTE]
-> Compared with the previous configuration, in which two worker threads execute tasks within a single MPI process, this configuration results in a slightly longer elapsed time, despite using the same number of worker threads. This difference arrises from the communication overhead associated with running two separate MPI processes. In the previous configuration, both worker threads reside within the same process, eliminating the need for inter-process MPI communication.
+> Compared with the previous configuration, in which two worker threads execute tasks within a single MPI process, this configuration results in a slightly longer elapsed time, despite using the same number of worker threads. This difference arises from the communication overhead associated with running two separate MPI processes. In the previous configuration, both worker threads reside within the same process, eliminating the need for inter-process MPI communication.
 
 ```console
 $ mpiexecjl -np 2 julia --project=<path/to/julia/environment> --threads 2,0 <path/to/script>.jl
@@ -455,21 +461,21 @@ As shown in **Figure 1**, the runtime engine of `torcjulia` is based on a symmet
     <source media = "(prefers-color-scheme: dark)" srcset = "docs/Fig1_dark.png">
     <source srcset = "docs/Fig1_light.png" media = "(prefers-color-scheme: light)">
     <img
-      src = "docs/Fig1_light.png"
+      src = "docs/Fig1_dark.png"
       width = "98%"
       alt = "Overview of the torcjulia AMT runtime system.">
   </picture>
   <br>
   <em>
-    Figure 1: High-level architecture of the torcjulia AMT runtime system</a>
+    Figure 1: High-level architecture of the torcjulia AMT runtime system
   </em>
 </p>
 
 ### Execution Model
 
-A `torcjulia`-based application consists of multiple MPI processes ❶ running on cluster nodes, each hosting a fixed size pool of Julia worker threads ❷. In addition to these threads, each MPI process maintains a dedicated manager thread ❸ that handles all remote task- and data-coordination operations, such as serving incoming task stealing requests. These operations are performed asynchronously using explicit MPI primitives that remain **completely transparent** to the user. 
+A `torcjulia`-based application consists of multiple MPI processes ❶ running on cluster nodes, each hosting a fixed-size pool of Julia worker threads ❷. In addition to these threads, each MPI process maintains a dedicated manager thread ❸ that handles all remote task- and data-coordination operations, such as serving incoming task stealing requests. These operations are performed asynchronously using explicit MPI primitives that remain **completely transparent** to the user. 
 
-Using MPI-2 dynamic process management routines, the number of MPI processes can be **dynamically adjusted** at runtime (see [Dynamic Worker Management](#worker-management)), which is particularly useful for workloads with time-varying computational demands. Moreover, tasks can be spawned at multiple parallelism levels from any participating MPI process, enabling **nested parallelism** (see [Nested Parallelism](#nested-parallelism)). 
+Using MPI-2 dynamic process management routines, the number of MPI processes can be **dynamically adjusted** at runtime (see [Dynamic Worker Management](#dynamic-worker-management)), which is particularly useful for workloads with time-varying computational demands. Moreover, tasks can be spawned at multiple parallelism levels from any participating MPI process, enabling **nested parallelism** (see [Nested Parallelism](#nested-parallelism)). 
 
 > [!IMPORTANT] 
 > In addition to task-based execution, `torcjulia` supports MPI's **SPMD** programming model allowing direct integration of MPI code (see [MPI Interoperability](#mpi-interoperability)). This enables existing MPI-based applications to incorporate task-based parallelism without modifying their established communication code, addressing a key barrier to adopting AMT runtimes in legacy HPC codebases.
@@ -497,7 +503,7 @@ Among *general-purpose* tasks, i.e., those assigned the default priority, tasks 
 
 Beyond *work sharing*, `torcjulia` also employs a *work stealing* mechanism that follows an *on-demand* approach, initiating work stealing only when needed, without requiring global knowledge of system load. 
 
-Specifically, an idle worker thread first attempts to retrieve work from its local workpile. If no tasks are available locally, it issues a synchronous task stealing request to the manager thread of the next, according to the rank, MPI process. If the request yields no work, the worker proceeds to the next rank and repeats the process until a pending task is obtained or all MPI ranks have been queried. 
+Specifically, an idle worker thread first attempts to retrieve work from its local workpile. If no tasks are available locally, it issues a synchronous task stealing request to the manager thread of the next MPI process in rank order. If the request yields no work, the worker proceeds to the next rank and repeats the process until a pending task is obtained or all MPI ranks have been queried. 
 
 > [!IMPORTANT] 
 > This *work-first, help-then* policy provides adaptive load balancing, minimizing processor idle time even for highly irregular workloads (see [Work Stealing](#work-stealing-1)).
@@ -549,7 +555,7 @@ Additional routines are provided for engine setup, querying the runtime environm
   init(func::Function; MPI_finalize::Bool = true)
   ```
 
-  Initializes `torcjulia` runtime and launches `func` as the primary application task on the main thread of the MPI process with rank 0 (master process). When `func` completes, the runtime shuts down. If `MPI_finalize` is `true` (the default), the underlying MPI environment is also finalized; otherwise, MPI remains active. This allows the library to be initalized and shut down multiple times within the same application. For futher details, see [this example](./examples/mpi_interoperability.jl).
+  Initializes the `torcjulia` runtime and launches `func` as the primary application task on the main thread of the MPI process with rank 0 (master process). When `func` completes, the runtime shuts down. If `MPI_finalize` is `true` (the default), the underlying MPI environment is also finalized; otherwise, MPI remains active. This allows the library to be initialized and shut down multiple times within the same application. For further details, see [this example](./examples/mpi_interoperability.jl).
 
 - ```julia
   argo_init(memory::Int, cache::Int)
@@ -648,7 +654,7 @@ Additional routines are provided for engine setup, querying the runtime environm
 
   The `weights` argument is used only when `policy` is `:WRR`. It must be a vector of integers, with each element specifying the relative computational capacity of the corresponding MPI node. These weights determine the proportion of tasks assigned to each node.
   
-  For example, given four MPI nodes and weights `[1, 1, 2, 3]`, tasks are distributed according to a `1:1:2:3` ratio. Thus, node `0` and `1` receive an equal share of tasks, node `2` receives twice as many tasks as either node `0` or node `1`, and node `3` receives three tasks as many, assuming a sufficiently large number of tasks (see [Task Scheduling Policies](#task-scheduling-policies)).
+  For example, given four MPI nodes and weights `[1, 1, 2, 3]`, tasks are distributed according to a `1:1:2:3` ratio. Thus, node `0` and `1` receive an equal share of tasks, node `2` receives twice as many tasks as either node `0` or node `1`, and node `3` receives three tasks as many tasks, assuming a sufficiently large number of tasks (see [Task Scheduling Policies](#task-scheduling-policies)).
 
   For all other policies, `weights` is ignored.
 
@@ -813,12 +819,12 @@ Additional routines are provided for engine setup, querying the runtime environm
   get(skeleton::AsyncResult)
   ```
 
-  Waits for all tasks associated with the asynchronous algorithmic skeleton represented by `skeleton` have completed and returns the resulting `Vector`.
+  Waits for all tasks associated with the asynchronous algorithmic skeleton represented by `skeleton` to complete and returns the resulting `Vector`.
 
 ### SPMD Programming Model with MPI
 
 - ```julia
-  spmd(func::Function, args...; return_completed::Bool = true, kwargs...)`
+  spmd(func::Function, args...; return_completed::Bool = true, kwargs...)
   ```
 
   Dynamically switches the execution model of the `torcjulia` runtime environment from AMT to SPMD mode, allowing MPI code to be executed directly within the calling function.
@@ -852,7 +858,7 @@ Additional routines are provided for engine setup, querying the runtime environm
   Allocates an `MPI shared-memory window` of the specified dimensions (`dim`) and element type (`T`) and returns the allocated array.
 
 > [!TIP]
-> The returned array can be passed as argument to subsequently submitted tasks, allowing tasks executing on MPI processes within the same shared memory island to access the data directly, without explicitly copying the array contents between processes.
+> The returned array can be passed as an argument to subsequently submitted tasks, allowing tasks executing on MPI processes within the same shared memory island to access the data directly, without explicitly copying the array contents between processes.
 
 ### Algorithmic Skeletons
 
@@ -884,7 +890,7 @@ Additional routines are provided for engine setup, querying the runtime environm
 
 
 > [!NOTE]
-> For brevity, arguments documented in the `map` skeleton section and have the same functionality across the remaining algorithmic skeletons are not described again.
+> For brevity, arguments that are documented in the `map` skeleton section and have the same functionality across the remaining algorithmic skeletons are not described again.
 
 
 - ```julia
@@ -892,7 +898,7 @@ Additional routines are provided for engine setup, querying the runtime environm
           chunksize::Union{Int, Nothing} = nothing, 
           node::Int = -1, forced_node::Bool = false, 
           priority::torcjulia.TaskPriorityLevel = torcjulia.TaskPriority.low, 
-          args::Tuple = (), kwargs...)`
+          args::Tuple = (), kwargs...)
   ```
 
   Parallel version of Python's [`itertools.starmap`](https://docs.python.org/3/library/itertools.html#itertools.starmap), applying `func` to each element of the  provided `iterable`, unpacking the elements of the iterable as separate arguments to `func`.
@@ -986,7 +992,7 @@ Additional routines are provided for engine setup, querying the runtime environm
 
   Parallel version of Julia's built-in [`Base.mapreduce`](https://docs.julialang.org/en/v1/base/collections/#Base.mapreduce-Tuple{Any,%20Any,%20Any}) function. Combines the parallel `map` and `reduce` operations into a single algorithmic skeleton. It applies `map_func` to the elements of the input iterable or to the corresponding elements of multiple input iterables, then reduces the resulting values using `reduce_func`.
 
-  Returns the result of the reduction performed by `reduce_func` to the output elements of `map_func`.
+  Returns the result of the reduction performed by `reduce_func` on the output elements of `map_func`.
 
 > [!NOTE]
 > For example, `mapReduce(f, g, [1, 2, 3])` computes `g(f(1), f(2), f(3))`.
@@ -996,7 +1002,7 @@ Additional routines are provided for engine setup, querying the runtime environm
          chunksize::Union{Int, Nothing} = nothing, 
          node::Int = -1, forced_node::Bool = false, 
          priority::torcjulia.TaskPriorityLevel = torcjulia.TaskPriority.low, 
-         args::Tuple = (), kwargs...)`
+         args::Tuple = (), kwargs...)
   ```
 
   Parallel version of Julia's built-in [`Base.filter`](https://docs.julialang.org/en/v1/base/collections/#Base.filter) function, applying `func` to each element of the provided `iterables` and returning a `Vector` containing the elements of the input iterables for which `func` returns `true`.
@@ -1199,7 +1205,7 @@ torcjulia [tasks]: average pending time = 0.149s, average execution time = 0.005
 
 As described in the [Software Architecture](#software-architecture) section, task functions can accept *futures* (task descriptors) referring to the results of previously submitted tasks, thereby expressing *data dependencies*. The runtime system **automatically** detects these dependencies and **dynamically** schedules ready tasks across available processing units to exploit concurrency.
 
-This code example showcase how data dependencies between tasks are expressed in `torcjulia`, enabling *dependency-aware* dynamic task scheduling. Task `C` depends on the results of tasks `A` and `B` and is therefore scheduled only after both complete, whereas task `D` depends only on task `A` and can start as soon as `A` completes. Tasks `A` and `B` can be executed concurrently, as can tasks `C` and `D`, since they are independent of each other.
+This code example showcases how data dependencies between tasks are expressed in `torcjulia`, enabling *dependency-aware* dynamic task scheduling. Task `C` depends on the results of tasks `A` and `B` and is therefore scheduled only after both complete, whereas task `D` depends only on task `A` and can start as soon as `A` completes. Tasks `A` and `B` can be executed concurrently, as can tasks `C` and `D`, since they are independent of each other.
 
 ```julia
 using torcjulia
@@ -1244,7 +1250,7 @@ torcjulia.init(main)
 
 `torcjulia` also supports nested task dependencies. 
 
-The following example demonstrates how nested task dependencies can be expressed in `torcjulia`. Task `B` depends on Task `A`, and task `D` depends on both tasks `B` and `C`. Internally, task `D` creates its own sub-DAG of tasks (`E`, `F`) that are executed in parallel (*nested paralllelism*).
+The following example demonstrates how nested task dependencies can be expressed in `torcjulia`. Task `B` depends on Task `A`, and task `D` depends on both tasks `B` and `C`. Internally, task `D` creates its own sub-DAG of tasks (`E`, `F`) that are executed in parallel (*nested parallelism*).
 
 ```julia
 using torcjulia
@@ -1557,7 +1563,7 @@ The following example launches `torcjulia` with `4` MPI processes, each running 
 
 - **Round-Robin**: Tasks `1`, `5`, `9`, `13`, and `17` are assigned to `MPI rank 0`; Tasks `2`, `6`, `10`, `14`, and `18` to `MPI rank 1`; Tasks `3`, `7`, `11`, `15`, and `19` to `MPI rank 2`; and Tasks `4`, `8`, `12`, `16`, and `20` to `MPI rank 3`.
 
-- **Weighted Round-Robin (WRR)**: With weights `[1, 2, 2, 1]` assigned to `MPI ranks 0`, `1`, `2`, and `3`, respectively, tasks are distributed as follows: tasks `1` and `11` are assigned to `MPI rank 0`; tasks `2–7` and `12–17` to `MPI rank 1`; tasks `8`, `9`, `18`, and `19` to `MPI rank 2`; and tasks `10` and `20` to `MPI rank 3`.
+- **Weighted Round-Robin (WRR)**: With weights `[1, 6, 2, 1]` assigned to `MPI ranks 0`, `1`, `2`, and `3`, respectively, tasks are distributed as follows: tasks `1` and `11` are assigned to `MPI rank 0`; tasks `2–7` and `12–17` to `MPI rank 1`; tasks `8`, `9`, `18`, and `19` to `MPI rank 2`; and tasks `10` and `20` to `MPI rank 3`.
 
 - **Local**: All tasks remain on `MPI rank 0`, which submits them. Since work stealing is disabled, worker threads on the other MPI processes cannot steal these tasks.
 
@@ -2111,12 +2117,12 @@ Multiple levels of parallelism are exposed by recursively submitting two tasks w
 ```julia
 using torcjulia
 
-function fibonnaci(n::Int)::Int
+function fibonacci(n::Int)::Int
   n < 2 && return n
-  n < 30 && return fibonnaci(n - 1) + fibonnaci(n - 2)
+  n < 30 && return fibonacci(n - 1) + fibonacci(n - 2)
 
-  taskA = torcjulia.submit(fibonnaci, n - 1)
-  taskB = torcjulia.submit(fibonnaci, n - 2)
+  taskA = torcjulia.submit(fibonacci, n - 1)
+  taskB = torcjulia.submit(fibonacci, n - 2)
 
   torcjulia.wait([taskA, taskB])
   torcjulia.result(taskA) + torcjulia.result(taskB)
@@ -2127,7 +2133,7 @@ function main()
 
   t0 = torcjulia.gettime()
   
-  value = fibonnaci(N)
+  value = fibonacci(N)
 
   elapsed = torcjulia.gettime() - t0
   
@@ -2986,7 +2992,7 @@ torcjulia [tasks]: average pending time = 0.168s, average execution time = 0.006
 
 The parallel `scan` skeleton computes prefix results over an input iterable using a user-defined associative function. It supports both `inclusive` and `exclusive` scans.
 
-In this example, we demonstrate both `inclusive` and `exclusive` scans using the addition operator (`+`) to compute the prefix sums of the elements in an input iterable, `A`. For the exclusive scan, we specify `0` as the identity element through the `identity` argument in the `scan` call.
+In this example, we demonstrate both `inclusive` and `exclusive` scans using the addition operator (`+`) to compute the prefix sums of the elements in an input iterable, `data`. For the exclusive scan, we specify `0` as the identity element through the `identity` argument in the `scan` call.
 
 
 ```julia
@@ -3075,7 +3081,7 @@ The first and second workloads demonstrate strong scalability, with parallel eff
     <source media = "(prefers-color-scheme: dark)" srcset = "docs/Fig2_dark.png">
     <source srcset = "docs/Fig2_light.png" media = "(prefers-color-scheme: light)">
     <img
-      src = "docs/Fig2_light.png"
+      src = "docs/Fig2_dark.png"
       width = "99%"
       alt = "Runtime Performance of torcjulia on the ARIS supercomputer across four workloads.">
   </picture>
@@ -3209,7 +3215,7 @@ If `Dagger` is not installed in the active environment, install the required dep
 julia> Pkg.instantiate()
 ```
 
-Then, navigate to the `Dagger` [experiments scripts directory](./scripts/experiments/dagger/) and execute the following commands:
+Then, exit the `Julia REPL`, navigate to the `Dagger` [experiments scripts directory](./scripts/experiments/dagger/), and execute the following commands:
 ```bash
 cd scripts/experiments/dagger
 
@@ -3243,7 +3249,7 @@ cd scripts/slurm/<runtime_system>
 
 Next, configure the parameters in the corresponding `.sh` script according to your requirements (e.g., nodes, tasks per node, CPUs per task, and partition).
 
-Then, load the required modules (e.g., Julia and MPI). You can either add the following commands to the job script or run it in your shell before submitting the job:
+Then, load the required modules (e.g., Julia and MPI). You can either add the following command to the job script or run it in your shell before submitting the job:
 ```bash
 module load julia/<version> openmpi/<version>
 ```
