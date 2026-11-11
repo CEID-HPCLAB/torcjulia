@@ -1555,7 +1555,7 @@ User-defined policies are also supported, allowing application-specific knowledg
 
 The following example launches `torcjulia` with `4` MPI processes, each running `2` worker threads, and demonstrates how `20` submitted tasks are distributed across the processes according to the selected scheduling policy.
 
-- **Round-Robin**: Tasks `1`, `2`, `9`, `10`, and `17` are assigned to `MPI rank 0`; Tasks `3`, `4`, `11`, `12`, and `18` to `MPI rank 1`; Tasks `5`, `6`, `13`, `14`, and `19` to `MPI rank 2`; and Tasks `7`, `8`, `15`, `16`, and `20` to `MPI rank 3`.
+- **Round-Robin**: Tasks `1`, `5`, `9`, `13`, and `17` are assigned to `MPI rank 0`; Tasks `2`, `6`, `10`, `14`, and `18` to `MPI rank 1`; Tasks `3`, `7`, `11`, `15`, and `19` to `MPI rank 2`; and Tasks `4`, `8`, `12`, `16`, and `20` to `MPI rank 3`.
 
 - **Weighted Round-Robin (WRR)**: With weights `[1, 2, 2, 1]` assigned to `MPI ranks 0`, `1`, `2`, and `3`, respectively, tasks are distributed as follows: tasks `1` and `11` are assigned to `MPI rank 0`; tasks `2–7` and `12–17` to `MPI rank 1`; tasks `8`, `9`, `18`, and `19` to `MPI rank 2`; and tasks `10` and `20` to `MPI rank 3`.
 
@@ -1601,10 +1601,10 @@ Round-Robin:
 ┌──────────┬────────────────────┬───────┬──────┐
 │ MPI rank │       Tasks        │ Count │  %   │
 ├──────────┼────────────────────┼───────┼──────┤
-│    0     │ [1, 2, 9, 10, 17]  │   5   │ 25%  │
-│    1     │ [3, 4, 11, 12, 18] │   5   │ 25%  │
-│    2     │ [5, 6, 13, 14, 19] │   5   │ 25%  │
-│    3     │ [7, 8, 15, 16, 20] │   5   │ 25%  │
+│    0     │ [1, 5, 9, 13, 17]  │   5   │ 25%  │
+│    1     │ [2, 6, 10, 14, 18] │   5   │ 25%  │
+│    2     │ [3, 7, 11, 15, 19] │   5   │ 25%  │
+│    3     │ [4, 8, 12, 16, 20] │   5   │ 25%  │
 └──────────┴────────────────────┴───────┴──────┘
 
 Weighted Round-Robin (WRR):
@@ -1698,124 +1698,124 @@ end
 torcjulia.init(main)
 ```
 
-Example output when launching the `torcjulia` runtime with `4` MPI processes and `2` worker threads per process:
+Example output when launching the `torcjulia` runtime with `4` MPI processes and `1` worker thread per process:
 ```console
-$ mpiexecjl -np 4 julia --project=<path/to/julia/environment> --threads 3,0 <path/to/script>.jl
+$ mpiexecjl -np 4 julia --project=<path/to/julia/environment> --threads 2,0 <path/to/script>.jl
 torcjulia: main starts
 Submitting 20 tasks. Scheduling policy: ROUND_ROBIN.
-[MPI Rank: 0, Worker thread local ID: 2, Task: 1] Work: input = 1, output = 1.
-[MPI Rank: 0, Worker thread local ID: 1, Task: 2] Work: input = 2, output = 4.
-[MPI Rank: 2, Worker thread local ID: 2, Task: 5] Work: input = 5, output = 25.
-[MPI Rank: 2, Worker thread local ID: 1, Task: 6] Work: input = 6, output = 36.
-[MPI Rank: 3, Worker thread local ID: 2, Task: 8] Work: input = 8, output = 64.
-[MPI Rank: 3, Worker thread local ID: 1, Task: 7] Work: input = 7, output = 49.
-[MPI Rank: 1, Worker thread local ID: 2, Task: 3] Work: input = 3, output = 9.
-[MPI Rank: 1, Worker thread local ID: 1, Task: 4] Work: input = 4, output = 16.
-[MPI Rank: 0, Worker thread local ID: 2, Task: 9] Work: input = 9, output = 81.
-[MPI Rank: 0, Worker thread local ID: 1, Task: 10] Work: input = 10, output = 100.
-[MPI Rank: 2, Worker thread local ID: 1, Task: 13] Work: input = 13, output = 169.
-[MPI Rank: 2, Worker thread local ID: 2, Task: 14] Work: input = 14, output = 196.
-[MPI Rank: 3, Worker thread local ID: 2, Task: 15] Work: input = 15, output = 225.
+[MPI Rank: 0, Worker thread local ID: 1, Task: 1] Work: input = 1, output = 1.
+[MPI Rank: 3, Worker thread local ID: 1, Task: 4] Work: input = 4, output = 16.
+[MPI Rank: 2, Worker thread local ID: 1, Task: 3] Work: input = 3, output = 9.
+[MPI Rank: 1, Worker thread local ID: 1, Task: 2] Work: input = 2, output = 4.
+[MPI Rank: 0, Worker thread local ID: 1, Task: 5] Work: input = 5, output = 25.
+[MPI Rank: 3, Worker thread local ID: 1, Task: 8] Work: input = 8, output = 64.
+[MPI Rank: 2, Worker thread local ID: 1, Task: 7] Work: input = 7, output = 49.
+[MPI Rank: 1, Worker thread local ID: 1, Task: 6] Work: input = 6, output = 36.
+[MPI Rank: 0, Worker thread local ID: 1, Task: 9] Work: input = 9, output = 81.
+[MPI Rank: 3, Worker thread local ID: 1, Task: 12] Work: input = 12, output = 144.
+[MPI Rank: 2, Worker thread local ID: 1, Task: 11] Work: input = 11, output = 121.
+[MPI Rank: 1, Worker thread local ID: 1, Task: 10] Work: input = 10, output = 100.
+[MPI Rank: 0, Worker thread local ID: 1, Task: 13] Work: input = 13, output = 169.
 [MPI Rank: 3, Worker thread local ID: 1, Task: 16] Work: input = 16, output = 256.
-[MPI Rank: 1, Worker thread local ID: 1, Task: 12] Work: input = 12, output = 144.
-[MPI Rank: 1, Worker thread local ID: 2, Task: 11] Work: input = 11, output = 121.
-[MPI Rank: 0, Worker thread local ID: 2, Task: 17] Work: input = 17, output = 289.
-[MPI Rank: 0, Worker thread local ID: 1, Task: 18] Work: input = 18, output = 324.
-[MPI Rank: 1, Worker thread local ID: 2, Task: 20] Work: input = 20, output = 400.
-[MPI Rank: 1, Worker thread local ID: 1, Task: 19] Work: input = 19, output = 361.
+[MPI Rank: 2, Worker thread local ID: 1, Task: 15] Work: input = 15, output = 225.
+[MPI Rank: 1, Worker thread local ID: 1, Task: 14] Work: input = 14, output = 196.
+[MPI Rank: 0, Worker thread local ID: 1, Task: 17] Work: input = 17, output = 289.
+[MPI Rank: 3, Worker thread local ID: 1, Task: 20] Work: input = 20, output = 400.
+[MPI Rank: 2, Worker thread local ID: 1, Task: 19] Work: input = 19, output = 361.
+[MPI Rank: 1, Worker thread local ID: 1, Task: 18] Work: input = 18, output = 324.
 
 Submitting 20 tasks. Scheduling policy: WRR with weights [1, 6, 2, 1].
-[MPI Rank: 0, Worker thread local ID: 2, Task: 1] Work: input = 1, output = 1.
-[MPI Rank: 0, Worker thread local ID: 1, Task: 11] Work: input = 11, output = 121.
-[MPI Rank: 2, Worker thread local ID: 1, Task: 8] Work: input = 8, output = 64.
-[MPI Rank: 2, Worker thread local ID: 2, Task: 9] Work: input = 9, output = 81.
+[MPI Rank: 0, Worker thread local ID: 1, Task: 1] Work: input = 1, output = 1.
 [MPI Rank: 1, Worker thread local ID: 1, Task: 2] Work: input = 2, output = 4.
-[MPI Rank: 1, Worker thread local ID: 2, Task: 3] Work: input = 3, output = 9.
 [MPI Rank: 3, Worker thread local ID: 1, Task: 10] Work: input = 10, output = 100.
-[MPI Rank: 3, Worker thread local ID: 2, Task: 20] Work: input = 20, output = 400.
-[MPI Rank: 2, Worker thread local ID: 1, Task: 18] Work: input = 18, output = 324.
-[MPI Rank: 2, Worker thread local ID: 2, Task: 19] Work: input = 19, output = 361.
+[MPI Rank: 2, Worker thread local ID: 1, Task: 8] Work: input = 8, output = 64.
+[MPI Rank: 0, Worker thread local ID: 1, Task: 11] Work: input = 11, output = 121.
+[MPI Rank: 1, Worker thread local ID: 1, Task: 3] Work: input = 3, output = 9.
+[MPI Rank: 2, Worker thread local ID: 1, Task: 9] Work: input = 9, output = 81.
+[MPI Rank: 3, Worker thread local ID: 1, Task: 20] Work: input = 20, output = 400.
 [MPI Rank: 1, Worker thread local ID: 1, Task: 4] Work: input = 4, output = 16.
-[MPI Rank: 1, Worker thread local ID: 2, Task: 5] Work: input = 5, output = 25.
-[MPI Rank: 1, Worker thread local ID: 2, Task: 7] Work: input = 7, output = 49.
+[MPI Rank: 2, Worker thread local ID: 1, Task: 18] Work: input = 18, output = 324.
+[MPI Rank: 1, Worker thread local ID: 1, Task: 5] Work: input = 5, output = 25.
+[MPI Rank: 2, Worker thread local ID: 1, Task: 19] Work: input = 19, output = 361.
 [MPI Rank: 1, Worker thread local ID: 1, Task: 6] Work: input = 6, output = 36.
+[MPI Rank: 1, Worker thread local ID: 1, Task: 7] Work: input = 7, output = 49.
+[MPI Rank: 1, Worker thread local ID: 1, Task: 12] Work: input = 12, output = 144.
 [MPI Rank: 1, Worker thread local ID: 1, Task: 13] Work: input = 13, output = 169.
-[MPI Rank: 1, Worker thread local ID: 2, Task: 12] Work: input = 12, output = 144.
-[MPI Rank: 1, Worker thread local ID: 2, Task: 15] Work: input = 15, output = 225.
 [MPI Rank: 1, Worker thread local ID: 1, Task: 14] Work: input = 14, output = 196.
-[MPI Rank: 1, Worker thread local ID: 2, Task: 16] Work: input = 16, output = 256.
+[MPI Rank: 1, Worker thread local ID: 1, Task: 15] Work: input = 15, output = 225.
+[MPI Rank: 1, Worker thread local ID: 1, Task: 16] Work: input = 16, output = 256.
 [MPI Rank: 1, Worker thread local ID: 1, Task: 17] Work: input = 17, output = 289.
 
 Submitting 20 tasks. Scheduling policy: LOCAL.
 [MPI Rank: 0, Worker thread local ID: 1, Task: 1] Work: input = 1, output = 1.
-[MPI Rank: 0, Worker thread local ID: 2, Task: 2] Work: input = 2, output = 4.
+[MPI Rank: 0, Worker thread local ID: 1, Task: 2] Work: input = 2, output = 4.
 [MPI Rank: 0, Worker thread local ID: 1, Task: 3] Work: input = 3, output = 9.
-[MPI Rank: 0, Worker thread local ID: 2, Task: 4] Work: input = 4, output = 16.
+[MPI Rank: 0, Worker thread local ID: 1, Task: 4] Work: input = 4, output = 16.
 [MPI Rank: 0, Worker thread local ID: 1, Task: 5] Work: input = 5, output = 25.
-[MPI Rank: 0, Worker thread local ID: 2, Task: 6] Work: input = 6, output = 36.
+[MPI Rank: 0, Worker thread local ID: 1, Task: 6] Work: input = 6, output = 36.
 [MPI Rank: 0, Worker thread local ID: 1, Task: 7] Work: input = 7, output = 49.
-[MPI Rank: 0, Worker thread local ID: 2, Task: 8] Work: input = 8, output = 64.
+[MPI Rank: 0, Worker thread local ID: 1, Task: 8] Work: input = 8, output = 64.
 [MPI Rank: 0, Worker thread local ID: 1, Task: 9] Work: input = 9, output = 81.
-[MPI Rank: 0, Worker thread local ID: 2, Task: 10] Work: input = 10, output = 100.
+[MPI Rank: 0, Worker thread local ID: 1, Task: 10] Work: input = 10, output = 100.
 [MPI Rank: 0, Worker thread local ID: 1, Task: 11] Work: input = 11, output = 121.
-[MPI Rank: 0, Worker thread local ID: 2, Task: 12] Work: input = 12, output = 144.
+[MPI Rank: 0, Worker thread local ID: 1, Task: 12] Work: input = 12, output = 144.
 [MPI Rank: 0, Worker thread local ID: 1, Task: 13] Work: input = 13, output = 169.
-[MPI Rank: 0, Worker thread local ID: 2, Task: 14] Work: input = 14, output = 196.
+[MPI Rank: 0, Worker thread local ID: 1, Task: 14] Work: input = 14, output = 196.
 [MPI Rank: 0, Worker thread local ID: 1, Task: 15] Work: input = 15, output = 225.
-[MPI Rank: 0, Worker thread local ID: 2, Task: 16] Work: input = 16, output = 256.
+[MPI Rank: 0, Worker thread local ID: 1, Task: 16] Work: input = 16, output = 256.
 [MPI Rank: 0, Worker thread local ID: 1, Task: 17] Work: input = 17, output = 289.
-[MPI Rank: 0, Worker thread local ID: 2, Task: 18] Work: input = 18, output = 324.
+[MPI Rank: 0, Worker thread local ID: 1, Task: 18] Work: input = 18, output = 324.
 [MPI Rank: 0, Worker thread local ID: 1, Task: 19] Work: input = 19, output = 361.
-[MPI Rank: 0, Worker thread local ID: 2, Task: 20] Work: input = 20, output = 400.
+[MPI Rank: 0, Worker thread local ID: 1, Task: 20] Work: input = 20, output = 400.
 
 Submitting 20 tasks. Scheduling policy: RANDOM.
-[MPI Rank: 0, Worker thread local ID: 1, Task: 16] Work: input = 16, output = 256.
-[MPI Rank: 0, Worker thread local ID: 2, Task: 17] Work: input = 17, output = 289.
-[MPI Rank: 1, Worker thread local ID: 2, Task: 3] Work: input = 3, output = 9.
-[MPI Rank: 2, Worker thread local ID: 1, Task: 2] Work: input = 2, output = 4.
-[MPI Rank: 2, Worker thread local ID: 2, Task: 5] Work: input = 5, output = 25.
-[MPI Rank: 1, Worker thread local ID: 1, Task: 4] Work: input = 4, output = 16.
-[MPI Rank: 3, Worker thread local ID: 2, Task: 7] Work: input = 7, output = 49.
-[MPI Rank: 3, Worker thread local ID: 1, Task: 1] Work: input = 1, output = 1.
-[MPI Rank: 0, Worker thread local ID: 1, Task: 18] Work: input = 18, output = 324.
-[MPI Rank: 0, Worker thread local ID: 2, Task: 19] Work: input = 19, output = 361.
-[MPI Rank: 1, Worker thread local ID: 2, Task: 8] Work: input = 8, output = 64.
-[MPI Rank: 2, Worker thread local ID: 1, Task: 6] Work: input = 6, output = 36.
-[MPI Rank: 2, Worker thread local ID: 2, Task: 11] Work: input = 11, output = 121.
-[MPI Rank: 1, Worker thread local ID: 1, Task: 10] Work: input = 10, output = 100.
-[MPI Rank: 3, Worker thread local ID: 2, Task: 9] Work: input = 9, output = 81.
-[MPI Rank: 0, Worker thread local ID: 1, Task: 20] Work: input = 20, output = 400.
-[MPI Rank: 1, Worker thread local ID: 2, Task: 13] Work: input = 13, output = 169.
-[MPI Rank: 2, Worker thread local ID: 2, Task: 14] Work: input = 14, output = 196.
-[MPI Rank: 2, Worker thread local ID: 1, Task: 12] Work: input = 12, output = 144.
-[MPI Rank: 1, Worker thread local ID: 1, Task: 15] Work: input = 15, output = 225.
+[MPI Rank: 0, Worker thread local ID: 1, Task: 2] Work: input = 2, output = 4.
+[MPI Rank: 2, Worker thread local ID: 1, Task: 3] Work: input = 3, output = 9.
+[MPI Rank: 1, Worker thread local ID: 1, Task: 1] Work: input = 1, output = 1.
+[MPI Rank: 3, Worker thread local ID: 1, Task: 12] Work: input = 12, output = 144.
+[MPI Rank: 0, Worker thread local ID: 1, Task: 6] Work: input = 6, output = 36.
+[MPI Rank: 2, Worker thread local ID: 1, Task: 4] Work: input = 4, output = 16.
+[MPI Rank: 1, Worker thread local ID: 1, Task: 7] Work: input = 7, output = 49.
+[MPI Rank: 3, Worker thread local ID: 1, Task: 17] Work: input = 17, output = 289.
+[MPI Rank: 0, Worker thread local ID: 1, Task: 11] Work: input = 11, output = 121.
+[MPI Rank: 2, Worker thread local ID: 1, Task: 5] Work: input = 5, output = 25.
+[MPI Rank: 1, Worker thread local ID: 1, Task: 18] Work: input = 18, output = 324.
+[MPI Rank: 0, Worker thread local ID: 1, Task: 19] Work: input = 19, output = 361.
+[MPI Rank: 2, Worker thread local ID: 1, Task: 8] Work: input = 8, output = 64.
+[MPI Rank: 2, Worker thread local ID: 1, Task: 9] Work: input = 9, output = 81.
+[MPI Rank: 2, Worker thread local ID: 1, Task: 10] Work: input = 10, output = 100.
+[MPI Rank: 2, Worker thread local ID: 1, Task: 13] Work: input = 13, output = 169.
+[MPI Rank: 2, Worker thread local ID: 1, Task: 14] Work: input = 14, output = 196.
+[MPI Rank: 2, Worker thread local ID: 1, Task: 15] Work: input = 15, output = 225.
+[MPI Rank: 2, Worker thread local ID: 1, Task: 16] Work: input = 16, output = 256.
+[MPI Rank: 2, Worker thread local ID: 1, Task: 20] Work: input = 20, output = 400.
 
 Submitting 20 tasks with custom scheduling policy.
 [MPI Rank: 0, Worker thread local ID: 1, Task: 2] Work: input = 2, output = 4.
-[MPI Rank: 0, Worker thread local ID: 2, Task: 6] Work: input = 6, output = 36.
-[MPI Rank: 2, Worker thread local ID: 1, Task: 5] Work: input = 5, output = 25.
-[MPI Rank: 2, Worker thread local ID: 2, Task: 1] Work: input = 1, output = 1.
+[MPI Rank: 2, Worker thread local ID: 1, Task: 1] Work: input = 1, output = 1.
 [MPI Rank: 1, Worker thread local ID: 1, Task: 4] Work: input = 4, output = 16.
-[MPI Rank: 1, Worker thread local ID: 2, Task: 8] Work: input = 8, output = 64.
-[MPI Rank: 3, Worker thread local ID: 2, Task: 3] Work: input = 3, output = 9.
+[MPI Rank: 3, Worker thread local ID: 1, Task: 3] Work: input = 3, output = 9.
+[MPI Rank: 0, Worker thread local ID: 1, Task: 6] Work: input = 6, output = 36.
+[MPI Rank: 2, Worker thread local ID: 1, Task: 5] Work: input = 5, output = 25.
+[MPI Rank: 1, Worker thread local ID: 1, Task: 8] Work: input = 8, output = 64.
 [MPI Rank: 3, Worker thread local ID: 1, Task: 7] Work: input = 7, output = 49.
 [MPI Rank: 0, Worker thread local ID: 1, Task: 10] Work: input = 10, output = 100.
-[MPI Rank: 0, Worker thread local ID: 2, Task: 14] Work: input = 14, output = 196.
 [MPI Rank: 2, Worker thread local ID: 1, Task: 9] Work: input = 9, output = 81.
-[MPI Rank: 2, Worker thread local ID: 2, Task: 13] Work: input = 13, output = 169.
 [MPI Rank: 1, Worker thread local ID: 1, Task: 12] Work: input = 12, output = 144.
-[MPI Rank: 1, Worker thread local ID: 2, Task: 16] Work: input = 16, output = 256.
-[MPI Rank: 3, Worker thread local ID: 2, Task: 11] Work: input = 11, output = 121.
+[MPI Rank: 3, Worker thread local ID: 1, Task: 11] Work: input = 11, output = 121.
+[MPI Rank: 0, Worker thread local ID: 1, Task: 14] Work: input = 14, output = 196.
+[MPI Rank: 2, Worker thread local ID: 1, Task: 13] Work: input = 13, output = 169.
+[MPI Rank: 1, Worker thread local ID: 1, Task: 16] Work: input = 16, output = 256.
 [MPI Rank: 3, Worker thread local ID: 1, Task: 15] Work: input = 15, output = 225.
 [MPI Rank: 0, Worker thread local ID: 1, Task: 18] Work: input = 18, output = 324.
 [MPI Rank: 2, Worker thread local ID: 1, Task: 17] Work: input = 17, output = 289.
 [MPI Rank: 1, Worker thread local ID: 1, Task: 20] Work: input = 20, output = 400.
-[MPI Rank: 3, Worker thread local ID: 2, Task: 19] Work: input = 19, output = 361.
-torcjulia [node 0]: created = 100, executed = 40, stole = 0, stolen = 0, steal_attempts = 0, max_queue_depth = 1
+[MPI Rank: 3, Worker thread local ID: 1, Task: 19] Work: input = 19, output = 361.
+torcjulia [node 0]: created = 100, executed = 36, stole = 0, stolen = 0, steal_attempts = 0, max_queue_depth = 1
+torcjulia [node 3]: created = 0, executed = 14, stole = 0, stolen = 0, steal_attempts = 0, max_queue_depth = 0
 torcjulia [node 1]: created = 0, executed = 25, stole = 0, stolen = 0, steal_attempts = 0, max_queue_depth = 0
-torcjulia [node 2]: created = 0, executed = 19, stole = 0, stolen = 0, steal_attempts = 0, max_queue_depth = 0
-torcjulia [node 3]: created = 0, executed = 16, stole = 0, stolen = 0, steal_attempts = 0, max_queue_depth = 0
-torcjulia [tasks]: average pending time = 0.746s, average execution time = 0.450s
+torcjulia [node 2]: created = 0, executed = 25, stole = 0, stolen = 0, steal_attempts = 0, max_queue_depth = 0
+torcjulia [tasks]: average pending time = 1.891s, average execution time = 0.449s
 ```
 
 ### Worker Management
@@ -2048,6 +2048,11 @@ torcjulia [node 0]: created = 8, executed = 6, stole = 0, stolen = 0, steal_atte
 torcjulia [node 1]: created = 0, executed = 2, stole = 0, stolen = 0, steal_attempts = 0, max_queue_depth = 0
 torcjulia [tasks]: average pending time = 0.179s, average execution time = 0.007s
 ```
+
+> [!NOTE]
+> By design, the manager thread of each MPI process is the thread with the highest ID. Since each process in this example is started with two threads, the manager thread has ID `2`.
+>
+> As the output shows, two callbacks are executed by the manager thread of `MPI rank 0`. This is the **only** case in which a manager thread executes user code. When a task is submitted on one rank but executed on another, its result is returned to the manager thread of the submitting rank. If the task has a synchronous callback (`async_callback = false`), the manager thread executes the callback immediately upon receiving the result. Since all tasks in this example are submitted on `rank 0`, the callbacks associated with the two tasks executed on `rank 1` are invoked by the manager thread of `rank 0`.
 
 #### Reduction Operations
 
@@ -3162,7 +3167,7 @@ julia> Pkg.instantiate()
 > [!NOTE]
 > The `experiments/` environment already declares the local `torcjulia` package via the `[sources]` section of its `Project.toml`. On Julia `version 1.11` or later, running `Pkg.activate("./experiments")` followed by `Pkg.instantiate()` from the repository root is therefore sufficient. On earlier versions, `[sources]` is ignored, so also run `Pkg.develop(path="./torcjulia")` after activating the environment.
 
-Once ready, navigate to the `torcjulia` [experiments scripts directory](./scripts/experiments/torcjulia/) and execute the following commands:
+Once ready, exit the `Julia REPL`, navigate to the `torcjulia` [experiments scripts directory](./scripts/experiments/torcjulia/) and execute the following commands:
 ```bash
 cd scripts/experiments/torcjulia
 
