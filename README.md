@@ -279,7 +279,7 @@ mpiexecjl -n <num_MPI_processes> julia --project=<path_to_environment> --threads
 
 Using the [`master_worker.jl`](./examples/master_worker.jl) example, we demonstrate the fundamental *master-worker* paradigm in `torcjulia` with varying numbers of MPI processes and Julia threads per process.
 
-The task function (`work`) takes an input value `x`, sleeps for one second, computes its square, and returns the result. The main application task, which runs on the main thread of the master process, spawns `ntasks` tasks. By default, these tasks are distributed among the available workers in a *round-robin* fashion (see [Scheduling Policies](#task-scheduling-policies)). The main task then calls `wait` to block until all spawned tasks have completed. While waiting, the master's main thread actively participates in executing tasks rather than remaining idle. Finally, it prints the results and reports the elapsed execution time.
+The task function `work` takes an input value `x`, sleeps for one second, computes its square, and returns the result. The main application task, which runs on the main thread of the master process, spawns `ntasks` tasks. By default, these tasks are distributed among the available workers in a *round-robin* fashion (see [Scheduling Policies](#task-scheduling-policies)). The main task then calls `wait` to block until all spawned tasks have completed. While waiting, the master's main thread actively participates in executing tasks rather than remaining idle. Finally, it prints the results and reports the elapsed execution time.
 
 ```julia
 using torcjulia
@@ -3270,10 +3270,10 @@ torcjulia/
 │   └── Project.toml           # Dependencies for running the provided examples
 │
 ├── experiments/               # Experimental workloads
-│   ├── data-preprocessing/    # Third workload
 │   ├── hooke-jeeves/          # First workload
-│   ├── mandelbrot-set/        # Fourth workload
 │   ├── monte-carlo/           # Second workload
+│   ├── data-preprocessing/    # Third workload
+│   ├── mandelbrot-set/        # Fourth workload
 │   ├── results/               # Precomputed experimental results
 │   └── Project.toml           # Dependencies for running the experiments
 │
@@ -3296,7 +3296,6 @@ torcjulia/
 - [X] Improve the API documentation
 - [ ] Integrate support for GPUs (both `NVIDIA` and `AMD`) and other accelerators
 - [ ] Implement automatic elastic resource management, dynamically scaling computational resources at runtime without user intervention
-- [ ] Introduce additional scheduling policies
 - [ ] Implement fault-tolerance mechanisms
 - [ ] Improve the work-stealing mechanism to optimize task redistribution across MPI nodes
 
