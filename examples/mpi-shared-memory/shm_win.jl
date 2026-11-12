@@ -22,7 +22,7 @@ Description: This example demonstrates how MPI shared-memory windows can be used
              within a shared memory island to directly map memory regions into a global shared address space. This paradigm can 
              reduce memory consumption by avoiding data replication across tasks running on different MPI processes.
 
-Notes: In torjulia, shared-memory windows are allocated through the `shw_alloc` function, while the underlying MPI-3 RMA operations
+Notes: In torcjulia, shared-memory windows are allocated through the `shw_alloc` function, while the underlying MPI-3 RMA operations
        are handled internally by the runtime. In this example, a shared array (`A`) of size equal to the number of MPI processes is allocated, 
        and each process updates its corresponding element in the shared array.
 
