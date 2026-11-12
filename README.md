@@ -183,7 +183,7 @@ julia> Pkg.instantiate()
 > By default, [MPI.jl](https://github.com/JuliaParallel/MPI.jl) uses `MPICH_jll` on non-Windows platforms and `MicrosoftMPI_jll` on Windows. No separate MPI installation is required. To use a different MPI implementation, configure the desired backend using [MPIPreferences.jl](https://juliaparallel.org/MPI.jl/stable/reference/mpipreferences/). For details, see the [MPI.jl configuration guide](https://juliaparallel.org/MPI.jl/stable/configuration/).
 
 > [!WARNING]
-> The `main` branch of the `torcjulia` repository does not include [ArgoDSM](https://github.com/etascale/argodsm) integration. To use `torcjulia` with DSM support provided by `ArgoDSM` first check out the [*`ArgoDSM`*](https://github.com/phadjido/torc_julia/tree/argoDSM) branch and then install the required dependencies by executing the commands listed above.
+> The `main` branch of the `torcjulia` repository does not include [ArgoDSM](https://github.com/etascale/argodsm) integration. To use `torcjulia` with DSM support provided by `ArgoDSM` first check out the [*`ArgoDSM`*](https://github.com/CEID-HPCLAB/torcjulia/tree/ArgoDSM) branch and then install the required dependencies by executing the commands listed above.
 
 ### ArgoDSM Integration
 

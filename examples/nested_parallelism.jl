@@ -33,12 +33,12 @@ Run: mpiexecjl -n 4 julia --project=/path/to/torcjulia/project --threads 3,0 nes
 
 using torcjulia
 
-function fibonnaci(n::Int)::Int
+function fibonacci(n::Int)::Int
     n < 2 && return n
-    n < 30 && return fibonnaci(n - 1) + fibonnaci(n - 2)
+    n < 30 && return fibonacci(n - 1) + fibonacci(n - 2)
 
-    taskA = torcjulia.submit(fibonnaci, n - 1)
-    taskB = torcjulia.submit(fibonnaci, n - 2)
+    taskA = torcjulia.submit(fibonacci, n - 1)
+    taskB = torcjulia.submit(fibonacci, n - 2)
 
     torcjulia.wait([taskA, taskB])
     torcjulia.result(taskA) + torcjulia.result(taskB)
@@ -49,7 +49,7 @@ function main()
 
     t0 = torcjulia.gettime()
    
-    value = fibonnaci(N)
+    value = fibonacci(N)
 
     elapsed = torcjulia.gettime() - t0
    
