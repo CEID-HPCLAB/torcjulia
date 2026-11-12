@@ -3272,11 +3272,11 @@ torcjulia/
 │
 ├── examples/                  # Examples demonstrating the core features of torcjulia
 │   ├── algorithmic-skeletons/ # Parallel algorithmic skeletons
-│   ├── argo-dsm/              # Distributed shared memory using ArgoDSM
 │   ├── flux_measurement/      # Parallel radio-source detection and flux measurement
 │   ├── mpi-shared-memory/     # MPI shared-memory windows integration
 │   ├── scheduling-policies/   # Task scheduling policies
 │   ├── task-dependencies/     # Task dependency management
+│   ├── task-prioritization/   # Priority-based task scheduling
 │   ├── worker-management/     # Dynamic worker pool management
 │   └── Project.toml           # Dependencies for running the provided examples
 │
@@ -3293,8 +3293,8 @@ torcjulia/
 │   ├── plots/                 # Scripts for reproducing all figures
 │   ├── experiments/           # Scripts for running the experiments
 │   │   ├── dagger/            # Scripts for running Dagger experiments
-│   │   └── torcjulia/         # Scripts for running torcjulia experiments
-│   ├── run_all.sh             # Script for running all experiments and reproducing the paper results
+│   │   ├── torcjulia/         # Scripts for running torcjulia experiments
+│   │   └── run_all.sh         # Script for running all experiments and reproducing the paper results
 │   └── slurm/                 # Slurm job scripts for running experiments on the ARIS supercomputer
 │
 └── torcjulia/                 # Core implementation of torcjulia
