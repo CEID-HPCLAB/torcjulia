@@ -42,7 +42,7 @@ function main()
     
     data = 1:ntasks
     
-    println("Submitting $ntasks tasks.\n")
+    println("Submitting $ntasks tasks.")
     
     tasks = [torcjulia.submit(work, x) for x in data]
     
