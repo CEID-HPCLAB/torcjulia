@@ -23,6 +23,9 @@ using .config
 include("logger.jl")    
 import .logger:init_logger, set_logger_level
 
+include("argodsm/bindings.jl")
+using .ArgoDSMBindings
+
 using MPI
 
 using ThreadPinning
@@ -121,7 +124,13 @@ const torcjulia_tls_curr_task = Vector{Ref{Dict{Symbol, Any}}}()
 const torcjulia_shw = Dict{UInt, Tuple{Any, Any}}()
 
 # local_shw_ptr => master_shw_ptr (pointer of the shared array on the node that created it)
-const torcjulia_local_to_master = Dict{UInt, UInt}()
+const torcjulia_shw_local_to_master = Dict{UInt, UInt}()
+
+# sdm_ptr => (ArgoDSM object)
+const torcjulia_dsm = Dict{UInt, Any}()
+
+# local_dsm_ptr => master_dsm_ptr (pointer of the ArgoDSM object on the node that created it)
+const torcjulia_dsm_local_to_master = Dict{UInt, UInt}()
 
 const torcjulia_queue = Vector{ConcurrentQueue{Union{Dict{Symbol, Any}, Nothing}}}()
 
@@ -149,20 +158,33 @@ function __init__()
     logger.init_logger(Logging.Debug)
  
     @debug "MPI module was successfully imported"
-    MPI.Init_thread(MPI.THREAD_MULTIPLE)
     
-    comm = MPI.Comm_dup(MPI.COMM_WORLD)
-    ctx[] = MPIContext(comm, UInt(MPI.Comm_rank(comm)), UInt(MPI.Comm_size(comm)))
-    
-    # Configure work stealing via the `TORCJULIA_STEALING` env variable (default: disabled)
-    TORCJULIA_STEALING_ENABLED[] = Base.get(ENV, "TORCJULIA_STEALING", "False") == "True"
+   # Configure work stealing via the `TORCJULIA_STEALING` env variable (default: disabled)
+    TORCJULIA_STEALING_ENABLED[] = lowercase(Base.get(ENV, "TORCJULIA_STEALING", "false")) == "true"
     
     TORCJULIA_MANAGER_YIELDTIME[] = (arg = tryparse(Float64, Base.get(ENV, "TORCJULIA_MANAGER_YIELDTIME", "0.01"))) === nothing ? 0.01 : arg
     TORCJULIA_WORKER_YIELDTIME[] = (arg = tryparse(Float64, Base.get(ENV, "TORCJULIA_WORKER_YIELDTIME", "0.01"))) === nothing ? 0.01 : arg
     
     # Configure the task distribution policy via the `TORCJULIA_DISTRIBUTION_POLICY` env variable (default: ROUND_ROBIN)
     TORCJULIA_DISTRIBUTION_POLICY[] = _parse_policy(Base.get(ENV, "TORCJULIA_DISTRIBUTION_POLICY", "ROUND_ROBIN"))
- 
+    
+    # Thread-safe, multi-level (hierarchical) queue for low-priority (general-purpose) tasks
+    for _ in 1:TORCJULIA_QUEUE_LEVELS
+        push!(torcjulia_queue, ConcurrentQueue{Union{Dict{Symbol, Any}, Nothing}}())
+    end
+end
+
+function _mpi_init()
+    # Initialize the MPI environment only if it has not been initialized yet (Required for ArgoDSM integration)
+    if !MPI.Initialized()
+        MPI.Init_thread(MPI.THREAD_MULTIPLE)
+    else
+        @warn "MPI is already initialized"
+    end
+    
+    comm = MPI.Comm_dup(MPI.COMM_WORLD)
+    ctx[] = MPIContext(comm, UInt(MPI.Comm_rank(comm)), UInt(MPI.Comm_size(comm)))
+
     nthreads = Threads.nthreads()
     
     multiprocess = ctx[].num_procs > 1
@@ -186,11 +208,6 @@ function __init__()
     
     for i in 1:num_workers
         torcjulia_tls_curr_task[i] = Ref{Dict{Symbol, Any}}()
-    end
-    
-    # Thread-safe, multi-level (hierarchical) queue for low-priority (general-purpose) tasks
-    for _ in 1:TORCJULIA_QUEUE_LEVELS
-        push!(torcjulia_queue, ConcurrentQueue{Union{Dict{Symbol, Any}, Nothing}}())
     end
 end
 
@@ -343,6 +360,8 @@ Initializes the torcjulia AMT runtime system.
 If launching with multiple MPI processes, the last thread of each MPI process is reserved for the manager thread.
 """
 function init()
+    _mpi_init()
+
     if MPI.Comm_get_parent() != MPI.COMM_NULL
         parent_comm = MPI.Comm_get_parent()
         
@@ -474,8 +493,8 @@ function submit(
 
     node = !isnothing(distribution_policy) ? _assign_task(distribution_policy) : node
     
-    # If MPI shared-memory windows are passed as arguments, replace them with their corresponding pointers
-    _args, _kwargs = !isempty(torcjulia_shw) ? (_parse_shw_args(args...; kwargs...)) : (args, NamedTuple(kwargs))
+    # If MPI shared-memory windows or ArgoDSM arrays are passed as arguments, replace them with their corresponding pointers
+    _args, _kwargs = (!isempty(torcjulia_shw) || !isempty(torcjulia_dsm)) ? (_parse_shm_args(args...; kwargs...)) : (args, NamedTuple(kwargs))
 
     task = create_task(func, callback, async_callback, counted, forced_node, priority, _args...; _kwargs...)
 
@@ -745,8 +764,8 @@ function work(task::Dict{Symbol, Any})
     task[:state] = running; func = task[:f]; args = task[:args]; kwargs = task[:kwargs]
     
     # Restore arguments containing pointers to MPI shared-memory windows
-    # to their original shared-array values
-    _args, _kwargs = !isempty(torcjulia_shw) ? (_restore_shw_args(args...; kwargs...)) : (args, NamedTuple(kwargs))
+    # or ArgoDSM arrays to their original shared-array values
+    _args, _kwargs = (!isempty(torcjulia_shw) || !isempty(torcjulia_dsm)) ? (_restore_shm_args(args...; kwargs...)) : (args, NamedTuple(kwargs))
 
     y = func(_args...;  _kwargs...)
 
@@ -1398,16 +1417,17 @@ function _capture_args_deps(task::Dict{Symbol, Any})::Bool
 end
 
 """ 
-    _parse_shw_args(args...; kwargs...)
+    _parse_shm_args(args...; kwargs...)
 
-Recursively scans the provided arguments to identify any MPI shared-memory windows 
+Recursively scans the provided arguments to identify any MPI shared-memory windows or distributed shared-memory arrays (ArgoDSM)
 and replaces them with their corresponding pointers for transmission to remote MPI processes.
 """
-function _parse_shw_args(args...; kwargs...)
+function _parse_shm_args(args...; kwargs...)
     """
         _replace(x)
 
-    Recursively replaces any MPI shared-memory windows in `x` with their corresponding pointers.
+    Recursively replaces any MPI shared-memory windows or distributed shared-memory 
+    arrays (ArgoDSM) in `x` with their corresponding pointers.
     """
     function _replace(x)
         if x isa Number || x isa String || x isa Type || x === nothing
@@ -1416,7 +1436,12 @@ function _parse_shw_args(args...; kwargs...)
 
         if x isa AbstractArray
             ptr = UInt(pointer_from_objref(x))
-            return haskey(torcjulia_local_to_master, ptr) ? torcjulia_local_to_master[ptr] : x
+            
+            haskey(torcjulia_shw_local_to_master, ptr) && return torcjulia_shw_local_to_master[ptr]
+
+            haskey(torcjulia_dsm_local_to_master, ptr) && return torcjulia_dsm_local_to_master[ptr]
+
+            return x
         
         elseif x isa Tuple
             return Base.map(_replace, x)
@@ -1440,23 +1465,35 @@ function _parse_shw_args(args...; kwargs...)
 end
 
 """
-    _restore_shw_args(args...; kwargs...)
+    _restore_shm_args(args...; kwargs...)
 
-Recursively scans the provided arguments to identify any pointers to MPI shared-memory windows
+Recursively scans the provided arguments to identify any pointers to MPI shared-memory windows or distributed shared-memory arrays (ArgoDSM)
 and replaces them with their corresponding shared-array values for task execution on the current MPI process.
 """
-function _restore_shw_args(args...; kwargs...)
+function _restore_shm_args(args...; kwargs...)
     """
         _restore(x)
     
-    Recursively restores any pointers to MPI shared-memory windows in `x` to their corresponding shared-array values.
+    Recursively restores any pointers to MPI shared-memory windows or distributed 
+    shared-memory arrays (ArgoDSM) in `x` to their corresponding shared-array values.
     """
     function _restore(x)
-        if x isa UInt && haskey(torcjulia_shw, x)
-            return _get_shared_memwin(x)
-
-        elseif x isa UInt && haskey(torcjulia_local_to_master, x)
-            return _get_shared_memwin(torcjulia_local_to_master[x])
+        if x isa UInt
+            
+            if haskey(torcjulia_shw, x)
+                return _get_shared_memwin(x)
+            
+            elseif haskey(torcjulia_shw_local_to_master, x)
+                return _get_shared_memwin(torcjulia_shw_local_to_master[x])
+            
+            elseif haskey(torcjulia_dsm, x)
+                return _get_argo_dsm(x)
+            
+            elseif haskey(torcjulia_dsm_local_to_master, x)
+                return _get_argo_dsm(torcjulia_dsm_local_to_master[x])
+            else
+                return x
+            end
 
         elseif x isa Number || x isa String || x isa Type || x === nothing
             return x
@@ -1481,6 +1518,89 @@ function _restore_shw_args(args...; kwargs...)
 
     Base.map(_restore, args), Base.map(_restore, NamedTuple(kwargs))
 end
+
+"""
+    pdsm_alloc(size::Int, T::Type)
+
+Allocates a distributed shared-memory array of element type `T`  across all MPI processes using ArgoDSM.
+
+The argument `size` specifies the number of elements to allocate, not the size in bytes.
+"""
+function pdsm_alloc(size::Int, T::Type)
+    for rank in Base.filter(r -> r != Int(ctx[].rank), 0:(Int(ctx[].num_procs) - 1))
+        submit(_alloc_argo_dsm, size, T, ctx[].rank; node = rank, forced_node = true, counted = false)
+    end
+    
+    n = prod(size)
+
+    ptr = collective_alloc(n * sizeof(T))
+    arr = unsafe_wrap(Array{T}, Ptr{T}(ptr), n; own = false)
+
+    id = UInt(pointer_from_objref(arr))
+    
+    id = MPI.bcast(id, ctx[].comm; root = ctx[].rank)
+    
+    _reg_argo_dsm(id, arr)
+
+    _waitall(false)
+    
+    arr
+end
+
+"""
+    _free_argo_dsm()
+
+Frees all distributed shared-memory arrays allocated by the torcjulia runtime environment using ArgoDSM and finalizes the ArgoDSM environment.
+"""
+function _free_argo_dsm()
+    argo_finalize()
+    
+    isempty(torcjulia_dsm) && return
+
+    empty!(torcjulia_dsm)
+end
+
+"""
+    _alloc_argo_dsm(size::Int, type::Type, master::UInt)
+
+Allocate a distributed shared-memory array of the specified `size` and `type` using ArgoDSM, with the specified `master` MPI process as the owner.
+
+This function is called by a worker thread on each remote MPI process, excluding the owner process.
+"""
+function _alloc_argo_dsm(size::Int, type::Type, master::UInt)
+    n = prod(size)
+
+    ptr = collective_alloc(n * sizeof(type))
+    arr = unsafe_wrap(Array{type}, Ptr{type}(ptr), n; own = false)
+
+    id = MPI.bcast(UInt(0), ctx[].comm; root = master)
+    
+    _reg_argo_dsm(id, arr)
+    
+    nothing
+end
+
+"""
+    _reg_argo_dsm(ptr::UInt, buffer)
+
+Registers the specified `buffer` under the corresponding pointer (`ptr`) in the ArgoDSM environment.
+
+Also, maps the buffer's local pointer to its corresponding pointer on the owner process.
+"""
+function _reg_argo_dsm(ptr::UInt, buffer) 
+    torcjulia_dsm[ptr] = buffer
+
+    torcjulia_dsm_local_to_master[UInt(pointer_from_objref(buffer))] = ptr
+end
+
+"""
+    _get_argo_dsm(ptr::UInt)
+
+Retrieves the distributed shared-memory array associated with the specified pointer (`ptr`) in the ArgoDSM environment.
+
+If the pointer is not registered, returns `nothing`.
+"""
+_get_argo_dsm(ptr::UInt) = haskey(torcjulia_dsm, ptr) ? torcjulia_dsm[ptr] : nothing
 
 """
     shw_alloc(dim::Tuple{Vararg{Int}}, T::Type)
@@ -1547,7 +1667,7 @@ Also, maps the buffer's local pointer to its corresponding pointer on the owner 
 function _reg_shared_memwin(ptr::UInt, buffer, win) 
     torcjulia_shw[ptr] = (buffer, win)
 
-    torcjulia_local_to_master[UInt(pointer_from_objref(buffer))] = ptr
+    torcjulia_shw_local_to_master[UInt(pointer_from_objref(buffer))] = ptr
 end
 
 """

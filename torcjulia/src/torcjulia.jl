@@ -18,15 +18,15 @@
 module torcjulia
 
 include("./runtime.jl")
-import .runtime: add_worker, ctx, filter, finalize, get, gettime, init, input,
+import .runtime: add_worker, argo_barrier, argo_init, ctx, filter, finalize, get, gettime, init, input,
                  kw_input, launch, map, mapReduce, mapPairs, mapPairsReduce,
-                 map_async, ready, reduce, remove_worker, result, 
+                 map_async, pdsm_alloc, ready, reduce, remove_worker, result, 
                  scan, set_logger_level, shw_alloc, spmd, starmap,
                  starmap_async, submit, wait,
                  DistributionPolicy, Future, TaskPriority, TaskPriorityLevel
 
-export add_worker, filter, get, gettime, init, input, kw_input,
-       map, mapReduce, mapPairs, mapPairsReduce, map_async, ready, 
+export add_worker, argo_barrier, argo_init, filter, get, gettime, init, input, kw_input,
+       map, mapReduce, mapPairs, mapPairsReduce, map_async, pdsm_alloc, ready, 
        reduce, remove_worker, result, scan, set_logger_level,
        shw_alloc, spmd, starmap, starmap_async, submit, submit_wait,
        Future, TaskPriority, TaskPriorityLevel
