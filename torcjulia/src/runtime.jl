@@ -155,7 +155,7 @@ function __init__()
     ctx[] = MPIContext(comm, UInt(MPI.Comm_rank(comm)), UInt(MPI.Comm_size(comm)))
     
     # Configure work stealing via the `TORCJULIA_STEALING` env variable (default: disabled)
-    TORCJULIA_STEALING_ENABLED[] = Base.get(ENV, "TORCJULIA_STEALING", "False") == "True"
+    TORCJULIA_STEALING_ENABLED[] = lowercase(Base.get(ENV, "TORCJULIA_STEALING", "false")) == "true"
     
     TORCJULIA_MANAGER_YIELDTIME[] = (arg = tryparse(Float64, Base.get(ENV, "TORCJULIA_MANAGER_YIELDTIME", "0.01"))) === nothing ? 0.01 : arg
     TORCJULIA_WORKER_YIELDTIME[] = (arg = tryparse(Float64, Base.get(ENV, "TORCJULIA_WORKER_YIELDTIME", "0.01"))) === nothing ? 0.01 : arg
