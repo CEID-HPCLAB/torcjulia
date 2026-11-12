@@ -1,3 +1,20 @@
+#=
+ * ==================================================================================
+ * torcjulia — An MPI-based Runtime System for Asynchronous Task Parallelism in Julia
+ * ==================================================================================
+ * This file is part of torcjulia, an MPI-based runtime system for asynchronous
+ * many task (AMT) parallelism in Julia across both shared and distributed memory
+ * platforms, developed at the High Performance Computing Laboratory (HPCLAB)
+ * at the Computer Engineering & Informatics Department (CEID),
+ * University of Patras, Greece.
+ *
+ * Repository: https://github.com/CEID-HPCLAB/torcjulia
+ *
+ * Authors: Argiris Sofotasios (CEID-HPCLAB)
+ * License: MIT License — see the LICENSE file in the repository root.
+ * ==================================================================================
+=#
+
 module ArgoDSMBindings
 
 export argo_init, argo_finalize, argo_barrier, collective_alloc, ArgoDSM_INITIALIZED
