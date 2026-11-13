@@ -10,6 +10,7 @@
 
 
 set -euo pipefail
+export LC_ALL=C
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd -- "$SCRIPT_DIR/../../../experiments" && pwd)"
@@ -92,7 +93,7 @@ for NUM_RANKS in "${NUM_PROCESSES[@]}"; do
     done
     
     MEDIAN_TIME=$(printf '%s\n' "${WALL_CLOCK_TIMES[@]}" | sort -n |
-                  awk '{a[NR]=$1} END {print (a[(NR+1)/2]+a[(NR+2)/2])/2}')
+                  awk '{a[NR]=$1} END {printf "%.4f\n", (a[int((NR+1)/2)]+a[int((NR+2)/2)])/2}')
     
     printf 'Julia Processes: %s, Julia Threads: %s | Wall-Clock Time: %s seconds\n' \
         "$NUM_RANKS" "$THREADS_PER_RANK" "$MEDIAN_TIME" >> "$OUTPUT_FILE"
