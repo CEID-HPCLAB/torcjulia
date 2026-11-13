@@ -165,7 +165,8 @@ for ax, (name, times) in zip(axes, workloads.items()):
     
     ax.bar(ranks - offset, times["torcjulia"], color = color, alpha = 0.9, edgecolor = 'black', linewidth = 1, width = bar_width, zorder = 3)
 
-    ax.bar(ranks + offset, times["Dagger"], color = color, alpha = 0.4, edgecolor = 'black', linewidth = 1, width = bar_width, zorder = 3, hatch = '///')
+    ax.bar(ranks + offset, times["Dagger"], color = color, alpha = 0.4 if name == "Workload 4" else 0.5, 
+           edgecolor = 'black', linewidth = 1, width = bar_width, zorder = 3, hatch = '///')
 
     gap_settings = {"Workload 1": {3: 3, 4: 0.15, "default": 2}, "default": {3: 9.99, 4: 0.451, "default": 6.66}}
 
