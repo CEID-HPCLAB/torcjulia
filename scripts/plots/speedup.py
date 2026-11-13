@@ -1,7 +1,41 @@
+import warnings
+
 from pathlib import Path
-import matplotlib.pyplot as plt
 import numpy as np
+
+import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+from matplotlib import font_manager
+
+STATIC_REGULAR_NAMES = {"Ubuntu-R.ttf", "Ubuntu-Regular.ttf"}
+FONT = "Ubuntu"
+
+def configure_font():
+    fm = font_manager.fontManager
+
+    regular = [f for f in fm.ttflist if f.name == "Ubuntu" and Path(f.fname).resolve().name in STATIC_REGULAR_NAMES]
+
+    if not regular:
+        warnings.warn(
+            "Static Ubuntu Regular font not found; falling back to DejaVu Serif. "
+            "Figures may differ slightly from those in the paper. To reproduce them exactly, "
+            "install the static Ubuntu font (on Ubuntu: 'sudo apt install fonts-ubuntu-classic'; "
+            "otherwise: https://fonts.google.com/specimen/Ubuntu) and clear the Matplotlib cache "
+            "('rm -rf ~/.cache/matplotlib')."
+        )
+        
+        plt.rcParams['font.family'] = 'DejaVu Serif'
+        global FONT; FONT = "DejaVu Serif"
+        return
+
+    fm.ttflist = [f for f in fm.ttflist if f.name != "Ubuntu"] + regular[:1]
+
+    if hasattr(fm, "_findfont_cached"):
+        fm._findfont_cached.cache_clear()
+
+    plt.rcParams["font.family"] = "Ubuntu"
+
+configure_font()
 
 RESULTS_PATH = Path(Path(__file__).resolve().parent / "../../experiments/results").resolve()
 ARIS_PATH = RESULTS_PATH / "aris"
@@ -53,7 +87,6 @@ datasets = [workload1, workload2, workload3, workload4]
 labels = ["Workload 1", "Workload 2", "Workload 3", "Workload 4"]
 colors = ["#1D4ED8", "darkred", "forestgreen", "darkorange"]
 
-plt.rcParams['font.family'] = 'Ubuntu'
 plt.rcParams['axes.labelsize'] = 16
 plt.rcParams['axes.titlesize'] = 18
 plt.rcParams['xtick.labelsize'] = 16
@@ -95,7 +128,7 @@ ax.set_xlabel('MPI Ranks', fontsize = 20, labelpad = 10); ax.set_ylabel('Speedup
 ax.set_xticks(np.arange(len(workers))); ax.set_xticklabels(workers, fontsize = 20)
 ax.set_yticks(np.arange(len(workers))); ax.set_yticklabels(workers, fontsize = 20)
 
-dataset_handles = [Line2D([0], [0], color=colors[i], marker = 'o', lw = 2, alpha = 0.9) for i in range(len(colors))]
+dataset_handles = [Line2D([0], [0], color = colors[i], marker = 'o', lw = 2, alpha = 0.9) for i in range(len(colors))]
 
 dataset_legend = ax.legend(handles = dataset_handles, labels = labels,
                            loc = 'upper left', frameon = True, 
@@ -114,12 +147,12 @@ ax.add_artist(dataset_legend)
 ideal_handle = [Line2D([0], [0], color = '#636363', linestyle = '--', lw = 2, alpha = 0.9)]
 
 ax.legend(handles = ideal_handle, labels = ['Ideal Speedup'], loc = 'upper left', frameon = True, 
-          facecolor = '#1a1a1a', edgecolor = 'white',
-          framealpha = 1.0, fontsize = 16.5, bbox_to_anchor = (0.005, 0.81))
+          facecolor = '#1a1a1a', edgecolor = 'white', framealpha = 1.0, fontsize = 16.5,
+          bbox_to_anchor = ((0.005, 0.81) if FONT == "Ubuntu" else (0.005, 0.80)))
 
 # ax.legend(handles = ideal_handle, labels = ['Ideal Speedup'], loc = 'upper left', frameon = True, 
-#           facecolor = 'white', edgecolor = '#1a1a1a', 
-#           framealpha = 1.0, fontsize = 16.5, bbox_to_anchor = (0.005, 0.81))
+#           facecolor = 'white', edgecolor = '#1a1a1a', framealpha = 1.0, fontsize = 16.5, 
+#           bbox_to_anchor = ((0.005, 0.81) if FONT == "Ubuntu" else (0.005, 0.80)))
 
 ax.grid(True, axis = 'both', linestyle = '--', linewidth = 0.62, alpha = 0.55, zorder = 0)
 for spine in ax.spines.values():
