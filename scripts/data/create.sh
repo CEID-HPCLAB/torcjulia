@@ -17,4 +17,4 @@ mkdir -p "$DATA_DIR"
 
 python3 create_dataset.py --samples 100_000 --chunks 10 --path "$DATA_DIR" --features 700 --classes 4 -pbn "warmup_dataset"
 
-python3 create_dataset.py --samples 1000 --chunks 10 --path "$DATA_DIR" --features 700 --classes 4 -pbn "dataset"
+python3 create_dataset.py --samples 17_978_709 --chunks 10 --path "$DATA_DIR" --features 700 --classes 4 -pbn "dataset"
