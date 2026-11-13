@@ -7,6 +7,7 @@
 # a corresponding file (experiments/results/torcjulia/mandelbrot-set.txt).
 
 set -euo pipefail
+export LC_ALL=C
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd -- "$SCRIPT_DIR/../../../experiments" && pwd)"
@@ -90,7 +91,7 @@ for NUM_RANKS in "${NUM_MPI_RANKS[@]}"; do
     done
     
     MEDIAN_TIME=$(printf '%s\n' "${WALL_CLOCK_TIMES[@]}" | sort -n |
-                awk '{a[NR]=$1} END {print (a[(NR+1)/2]+a[(NR+2)/2])/2}')
+                  awk '{a[NR]=$1} END {printf "%.4f\n", (a[int((NR+1)/2)]+a[int((NR+2)/2)])/2}')
     
     printf 'MPI Processes: %s, Worker Threads: %s | Wall-Clock Time: %s seconds\n' \
         "$NUM_RANKS" "$WORKER_THREADS" "$MEDIAN_TIME" >> "$OUTPUT_FILE"
