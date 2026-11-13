@@ -1,8 +1,49 @@
+import warnings
+
 from pathlib import Path
-import matplotlib.pyplot as plt
 import numpy as np
+
+import matplotlib.pyplot as plt
+
 from matplotlib.patches import Patch
 from matplotlib.ticker import FuncFormatter
+
+from matplotlib.lines import Line2D
+from matplotlib import font_manager
+
+STATIC_REGULAR_NAMES = {"Ubuntu-R.ttf", "Ubuntu-Regular.ttf"}
+STATIC_BOLD_NAMES = {"Ubuntu-B.ttf", "Ubuntu-Bold.ttf"}
+FONT = "Ubuntu"
+
+def configure_font():
+    fm = font_manager.fontManager
+
+    def static(names):
+        return [f for f in fm.ttflist
+                if f.name == "Ubuntu" and Path(f.fname).resolve().name in names]
+
+    regular, bold = static(STATIC_REGULAR_NAMES), static(STATIC_BOLD_NAMES)
+
+    if not regular:
+        warnings.warn(
+            "Static Ubuntu Regular font not found; falling back to DejaVu Serif. "
+            "Figures may differ slightly from those in the paper. To reproduce them exactly, "
+            "install the static Ubuntu font (on Ubuntu: 'sudo apt install fonts-ubuntu-classic'; "
+            "otherwise: https://fonts.google.com/specimen/Ubuntu) and clear the Matplotlib cache "
+            "('rm -rf ~/.cache/matplotlib')."
+        )
+        plt.rcParams["font.family"] = "DejaVu Serif"
+        global FONT; FONT = "DejaVu Serif"
+        return
+
+    fm.ttflist = [f for f in fm.ttflist if f.name != "Ubuntu"] + regular[:1] + bold[:1]
+
+    if hasattr(fm, "_findfont_cached"):
+        fm._findfont_cached.cache_clear()
+
+    plt.rcParams["font.family"] = "Ubuntu"
+
+configure_font()
 
 RESULTS_PATH = Path(Path(__file__).resolve().parent / "../../experiments/results").resolve()
 ARIS_PATH = RESULTS_PATH / "aris"
@@ -87,7 +128,6 @@ WORKLOAD_SETTINGS = {
     }
 }
 
-plt.rcParams['font.family'] = 'Ubuntu'
 plt.rcParams['axes.labelsize'] = 16
 plt.rcParams['axes.titlesize'] = 18
 plt.rcParams['xtick.labelsize'] = 13
@@ -123,16 +163,16 @@ for ax, (name, times) in zip(axes, workloads.items()):
             gap = 6
 
         ax.text(ranks[i], times[i] + gap, f"{speedup:.2f}×", ha = "center",
-                va = "bottom", fontsize = 12, fontweight = "bold", rotation = 90, color = "#D1D5DB")
+                va = "bottom", fontsize = 12 if FONT == "Ubuntu" else 11, fontweight = "bold", rotation = 90, color = "#D1D5DB")
 
         # ax.text(ranks[i], times[i] + gap, f"{speedup:.2f}×", ha = "center",
-        #         va = "bottom", fontsize = 12, fontweight = "bold", rotation = 90, color = "#475569")
+        #         va = "bottom", fontsize = 12 if FONT == "Ubuntu" else 11, fontweight = "bold", rotation = 90, color = "#475569")
 
     ax.set_xlabel("MPI Ranks", fontsize = 16)
     ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
     ax.spines["left"].set_linewidth(1.2); ax.spines["bottom"].set_linewidth(1.2)
     
-    ax.set_xticks(ranks); ax.set_xticklabels(workers, fontsize = 13)
+    ax.set_xticks(ranks); ax.set_xticklabels(workers, fontsize = 13 if FONT == "Ubuntu" else 11.5)
     ax.yaxis.set_major_formatter(formatter)
 
     settings = WORKLOAD_SETTINGS.get(name)
